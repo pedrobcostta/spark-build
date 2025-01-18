@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { Send, ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { BasicInfoStep } from "./form/BasicInfoStep";
+import { ProjectDetailsStep } from "./form/ProjectDetailsStep";
+import { ReferencesStep } from "./form/ReferencesStep";
 
 type FormStep = 1 | 2 | 3;
 
 interface FormData {
-  // Step 1: Basic Info
   name: string;
   companyName: string;
   whatsapp: string;
-  // Step 2: Project Details
   description: string;
   mustHave: string;
   mustNotHave: string;
-  // Step 3: References
   socialLinks: string;
   inspiration: string;
   attachments: FileList | null;
@@ -38,20 +36,14 @@ export const ContactSection = () => {
   const [isValidatingWhatsapp, setIsValidatingWhatsapp] = useState(false);
   const { toast } = useToast();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (name: string, value: string | FileList) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData((prev) => ({ ...prev, attachments: e.target.files }));
-    }
   };
 
   const validateWhatsapp = async (number: string) => {
     setIsValidatingWhatsapp(true);
     try {
+      const cleanNumber = number.replace(/\D/g, "");
       const response = await fetch("https://chatapi.sparksolucoes.com.br/api/messages/send", {
         method: "POST",
         headers: {
@@ -59,7 +51,7 @@ export const ContactSection = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          number: `55${number.replace(/\D/g, "")}`,
+          number: `55${cleanNumber}`,
           body: "Olá! Recebemos seu contato através do nosso site. Em breve retornaremos com mais informações!",
         }),
       });
@@ -115,6 +107,17 @@ export const ContactSection = () => {
     setStep(1);
   };
 
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return <BasicInfoStep formData={formData} onChange={handleInputChange} />;
+      case 2:
+        return <ProjectDetailsStep formData={formData} onChange={handleInputChange} />;
+      case 3:
+        return <ReferencesStep formData={formData} onChange={handleInputChange} />;
+    }
+  };
+
   return (
     <section id="contact" className="py-20 px-4 bg-black">
       <div className="container max-w-4xl mx-auto">
@@ -137,146 +140,7 @@ export const ContactSection = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {step === 1 && (
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-secondary mb-2">
-                  Nome para contato *
-                </label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  required
-                  minLength={3}
-                />
-              </div>
-              <div>
-                <label htmlFor="companyName" className="block text-secondary mb-2">
-                  Nome da empresa/site *
-                </label>
-                <Input
-                  id="companyName"
-                  name="companyName"
-                  value={formData.companyName}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  required
-                  minLength={2}
-                />
-              </div>
-              <div>
-                <label htmlFor="whatsapp" className="block text-secondary mb-2">
-                  WhatsApp *
-                </label>
-                <Input
-                  id="whatsapp"
-                  name="whatsapp"
-                  value={formData.whatsapp}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  required
-                  pattern="^\+?[1-9]\d{10,14}$"
-                  placeholder="+5511999999999"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="description" className="block text-secondary mb-2">
-                  Descrição do projeto (história/benefícios/diferenciais) *
-                </label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary min-h-[120px]"
-                  required
-                  minLength={100}
-                  placeholder="Descreva seu projeto em detalhes (mínimo 100 caracteres)"
-                />
-              </div>
-              <div>
-                <label htmlFor="mustHave" className="block text-secondary mb-2">
-                  O que o site deve ter? *
-                </label>
-                <Textarea
-                  id="mustHave"
-                  name="mustHave"
-                  value={formData.mustHave}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary min-h-[100px]"
-                  required
-                  minLength={50}
-                  placeholder="Liste os elementos essenciais para seu site (mínimo 50 caracteres)"
-                />
-              </div>
-              <div>
-                <label htmlFor="mustNotHave" className="block text-secondary mb-2">
-                  O que o site não deve ter?
-                </label>
-                <Textarea
-                  id="mustNotHave"
-                  name="mustNotHave"
-                  value={formData.mustNotHave}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary min-h-[100px]"
-                  placeholder="Liste elementos que você não quer no seu site"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="socialLinks" className="block text-secondary mb-2">
-                  Redes sociais
-                </label>
-                <Textarea
-                  id="socialLinks"
-                  name="socialLinks"
-                  value={formData.socialLinks}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  placeholder="Liste os links das suas redes sociais"
-                />
-              </div>
-              <div>
-                <label htmlFor="inspiration" className="block text-secondary mb-2">
-                  Sites de inspiração
-                </label>
-                <Textarea
-                  id="inspiration"
-                  name="inspiration"
-                  value={formData.inspiration}
-                  onChange={handleInputChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  placeholder="Liste sites que você gosta e o que especificamente gosta neles"
-                />
-              </div>
-              <div>
-                <label htmlFor="attachments" className="block text-secondary mb-2">
-                  Anexos (logos, imagens, arquivos)
-                </label>
-                <Input
-                  id="attachments"
-                  name="attachments"
-                  type="file"
-                  onChange={handleFileChange}
-                  className="bg-black border-primary/20 text-white focus:border-primary"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx"
-                />
-              </div>
-            </div>
-          )}
+          {renderStep()}
 
           <div className="flex justify-between gap-4">
             {step > 1 && (
@@ -285,6 +149,7 @@ export const ContactSection = () => {
                 onClick={prevStep}
                 variant="outline"
                 className="flex-1 bg-black text-primary border-primary/20 hover:bg-primary/10"
+                disabled={isValidatingWhatsapp}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Anterior
@@ -296,6 +161,7 @@ export const ContactSection = () => {
                 type="button"
                 onClick={nextStep}
                 className="flex-1 bg-primary text-black hover:bg-primary/90"
+                disabled={isValidatingWhatsapp}
               >
                 Próximo
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -304,6 +170,7 @@ export const ContactSection = () => {
               <Button
                 type="submit"
                 className="flex-1 bg-primary text-black hover:bg-primary/90"
+                disabled={isValidatingWhatsapp}
               >
                 Enviar mensagem
                 <Send className="w-4 h-4 ml-2" />
