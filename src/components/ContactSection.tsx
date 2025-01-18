@@ -35,6 +35,7 @@ export const ContactSection = () => {
     inspiration: "",
     attachments: null,
   });
+  const [isValidatingWhatsapp, setIsValidatingWhatsapp] = useState(false);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -48,7 +49,53 @@ export const ContactSection = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateWhatsapp = async (number: string) => {
+    setIsValidatingWhatsapp(true);
+    try {
+      const response = await fetch("https://chatapi.sparksolucoes.com.br/api/messages/send", {
+        method: "POST",
+        headers: {
+          "Authorization": "3499538117",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          number: `55${number.replace(/\D/g, "")}`,
+          body: "Olá! Recebemos seu contato através do nosso site. Em breve retornaremos com mais informações!",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Número de WhatsApp inválido");
+      }
+
+      toast({
+        title: "WhatsApp validado!",
+        description: "Enviamos uma mensagem de confirmação.",
+      });
+      return true;
+    } catch (error) {
+      toast({
+        title: "Erro na validação",
+        description: "Por favor, verifique o número informado.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsValidatingWhatsapp(false);
+    }
+  };
+
+  const nextStep = async () => {
+    if (step === 1) {
+      const isValid = await validateWhatsapp(formData.whatsapp);
+      if (!isValid) return;
+    }
+    setStep((prev) => (prev < 3 ? (prev + 1) as FormStep : prev));
+  };
+
+  const prevStep = () => setStep((prev) => (prev > 1 ? (prev - 1) as FormStep : prev));
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     toast({
       title: "Formulário enviado!",
@@ -67,9 +114,6 @@ export const ContactSection = () => {
     });
     setStep(1);
   };
-
-  const nextStep = () => setStep((prev) => (prev < 3 ? (prev + 1) as FormStep : prev));
-  const prevStep = () => setStep((prev) => (prev > 1 ? (prev - 1) as FormStep : prev));
 
   return (
     <section id="contact" className="py-20 px-4 bg-black">
@@ -270,4 +314,3 @@ export const ContactSection = () => {
       </div>
     </section>
   );
-};
